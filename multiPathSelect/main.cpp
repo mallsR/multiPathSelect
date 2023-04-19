@@ -14,7 +14,7 @@ using namespace std;
 // 阐述：这个代码应用于矩形区域的遍历
 // 无法适用于任何类型的图，并且假设R0的坐标为（0，0）；
 
-// 存储节点位置，上下左右是否有变，且是否繁忙
+// 存储节点与其相邻边是否繁忙
 struct Node{
     bool b_nodeBusy;
 //    从上方的边开始，顺时针存储
@@ -64,8 +64,9 @@ public:
 //        第二类：判断L/L7形路径 ： 其实就是除了I型路径之外的优先遍历竖直方向的路径（Y轴/遍历列）:结果也许包括多个路径
         vector<vector<pair<int, int>>> colFirstPathSet = f_colFirstTraverse(m_src, m_des, m_linkState);
         m_pathSetVec.insert(m_pathSetVec.end(), colFirstPathSet.begin(), colFirstPathSet.end());
-//        地三类：优先遍历水平方向的路径（X轴/遍历行），结果也许包括多个路径
-        
+//        第三类：优先遍历水平方向的路径（X轴/遍历行），结果也许包括多个路径
+        vector<vector<pair<int, int>>> rowFirstPathSet = f_rowFirstTraverse(m_src, m_des, m_linkState);
+        m_pathSetVec.insert(m_pathSetVec.end(), rowFirstPathSet.begin(), rowFirstPathSet.end());
         return m_pathSetVec;
     }
 //    沿着列进行遍历
@@ -179,6 +180,7 @@ public:
         if (m_linkState[src.first][src.second].b_edgeBusy[i_colDirFlag]) {
             return {};
         }
+//        此处决定了其至少优先沿着竖直方向移动一个位置
         src.first += i_colLenFlag;
         if (m_linkState[src.first][src.second].b_nodeBusy) {
             return {};
@@ -188,7 +190,7 @@ public:
         vector<vector<pair<int, int>>> ans;
         DFS(src, des, m_linkState, b_visited, borders, curr_path, ans);
 //        打印ans路径集合
-        cout<<"ans : "<<endl;
+        cout<<"f_colFirstTraverse ans : "<<endl;
         for (int i = 0; i < ans.size(); ++i) {
             for (int j = 0; j < ans[i].size(); ++j) {
                 cout<<ans[i][j].first<<" "<<ans[i][j].second<<endl;
@@ -197,6 +199,71 @@ public:
         }
         return ans;
     }
+//    第三类：优先遍历水平方向的路径（X轴/遍历行），结果也许包括多个路径
+    vector<vector<pair<int, int>>> f_rowFirstTraverse(pair<int, int> src, pair<int, int> des, vector<vector<Node>> m_linkState) {
+//        设置遍历区域的border
+        unordered_map<string, int> borders = {
+            {"up", min(src.first, des.first)},
+            {"bottom", max(src.first, des.first)},
+            {"left", min(src.second, des.second)},
+            {"right", max(src.second, des.second)},
+        };
+//          打印输出
+        cout<<"borders : "<<endl;
+        for (auto  it : borders) {
+            cout<<it.first<<" "<<it.second<<endl;
+        }
+        //        把src的位置设置为visited，然后让src沿着列移动一个位置
+        vector<vector<bool>> b_visited(m_linkState.size(), vector<bool>(m_linkState[0].size(), false));
+        b_visited[src.first][src.second] = true;
+        //        确定沿着行移动方向，
+        int i_colDirFlag = 2, i_rowDirFlag = 1;
+        int i_colLenFlag = 1, i_rowLenFlag = 1;
+        //        确定des在src的方位
+        if (src.first < des.first) {
+            i_colDirFlag = 2;
+            i_colLenFlag = 1;
+        } else {
+            i_colDirFlag = 0;
+            i_colLenFlag = -1;
+        }
+        if (src.second < des.second) {
+            i_rowDirFlag = 1;
+            i_rowLenFlag = 1;
+        } else {
+            i_rowDirFlag = 3;
+            i_rowLenFlag = -1;
+        }
+//        打印输出
+        cout<<"i_colDirFlag : "<<i_colDirFlag<<" i_rowDirFlag : "<<i_rowDirFlag<<endl;
+        cout<<"i_colLenFlag : "<<i_colLenFlag<<" i_rowLenFlag: "<<i_rowLenFlag<<endl;
+//        所有路径都从src开始出发，存储当前遍历得到的路径
+        vector<pair<int, int>> curr_path = {src};
+//        确定水平方向的下一个节点是否busy，以及这一段路径是否busy。
+//        第一个节点或者路径就繁忙，则不可能寻找到路径，直接放回空
+        if (m_linkState[src.first][src.second].b_edgeBusy[i_rowDirFlag]) {
+            return {};
+        }
+//        此处确定了优先沿着水平方向至少遍历1个位置
+        src.second += i_rowLenFlag;
+        if (m_linkState[src.first][src.second].b_nodeBusy) {
+            return {};
+        }
+//          从移动后的src开始进行DFS，直至des
+        //        ans存储除了I型路径之外，优先遍历列的路径集合
+        vector<vector<pair<int, int>>> ans;
+        DFS(src, des, m_linkState, b_visited, borders, curr_path, ans);
+//        打印ans路径集合
+        cout<<"f_rowFirstTraverse ans : "<<endl;
+        for (int i = 0; i < ans.size(); ++i) {
+            for (int j = 0; j < ans[i].size(); ++j) {
+                cout<<ans[i][j].first<<" "<<ans[i][j].second<<endl;
+            }
+            cout<<endl;
+        }
+        return ans;
+    }
+    
 //    DFS寻找路径
     void DFS(pair<int, int> src, pair<int, int> des, const vector<vector<Node>> & m_linkState, vector<vector<bool>> & b_visited, unordered_map<string, int> & borders, vector<pair<int, int>> curr_path, vector<vector<pair<int, int>>> & ans) {
 //        输出src，des
