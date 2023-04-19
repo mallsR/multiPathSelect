@@ -27,21 +27,81 @@ struct Node{
     }
 };
 
+
+// 定义图类：记录边的空闲状态
+class Graph{
+private:
+    int m_row, m_col;
+//    为了实现方便，边暂时选用邻接矩阵进行存储
+    vector<vector<Node>> m_linkState;
+public:
+//    地图默认初始化为4 * 4
+    Graph(int i_row = 4, int i_col = 4) {
+        m_row = i_row;
+        m_col = i_col;
+        for (int i = 0; i < m_row; ++i) {
+            vector<Node> row_state(m_col, Node());
+            m_linkState.emplace_back(row_state);
+        }
+    }
+    void f_showGraph() {
+        for (int i = 0; i < m_row; ++i) {
+            for (int j = 0; j < m_col; ++j) {
+                Node curr_node = m_linkState[i][j];
+                cout<<curr_node.b_nodeBusy<<" ";
+                for (int k = 0; k < 4; ++k) {
+                    cout<<curr_node.b_edgeBusy[k]<<" ";
+                }
+                cout<<endl;
+            }
+            cout<<endl;
+        }
+    }
+//    设置节点状态
+    void f_setLinkState(const pair<int, int> & pos, bool state) {
+        m_linkState[pos.first][pos.second].b_nodeBusy = state;
+    }
+//    返回图的边节点信息
+    vector<vector<Node>> & f_getLinkState() {
+        return m_linkState;
+    }
+//    获取地图尺寸
+    vector<int> f_getMapSizeVec() {
+        return {m_row, m_col};
+    }
+};
+
+
 //定义任务类:记录任务，以及寻找路径
 class Task{
 private:
     //    pair存储起点和终点的位置信息，注意此处是以行号、列号的顺序进行存储，不是x和y
     pair<int, int> m_src;
     pair<int, int> m_des;
+//  m_pathSetVec : 所有路径
     vector<vector<pair<int, int>>> m_pathSetVec;
+//  m_IpathSetVec : I型路径
+    vector<vector<pair<int, int>>> m_IpathSetVec;
+//  m_colFirstPathSetVec : 优先进行竖直方向遍历的路径
+    vector<vector<pair<int, int>>> m_colFirstPathSetVec;
+//  m_rowFirstPathSetVec : 优先进行水平方向遍历的路径
+    vector<vector<pair<int, int>>> m_rowFirstPathSetVec;
+//    建立一个路径地图，存储这个任务的路径集合占用的边的情况，方便判断两个任务的路径集合是否有交集
+    vector<vector<Node>> m_routeMap;
 public:
-    Task(const pair<int, int> & src, const pair<int, int> & des) {
+    Task(const pair<int, int> & src, const pair<int, int> & des, vector<int> mapSizeVec = {4, 4}) {
         //        构造函数内确定起点和终点位置
 //        cin >> m_src.first >> m_src.second;
 //        cin >> m_des.first >> m_des.second;
         m_src = src;
         m_des = des;
+//        初始化路径地图
+        for (int i = 0; i < mapSizeVec[0]; ++i) {
+            vector<Node> rowState(mapSizeVec[1], Node());
+            m_routeMap.emplace_back(rowState);
+        }
     }
+    
     //    每一条路径为一个vector<pair<int, int>>
     vector<vector<pair<int, int>>> f_findRoute(vector<vector<Node>> m_linkState) {
         //         第一类：首先判断I型路径
@@ -51,6 +111,9 @@ public:
 //            列遍历结果不为空，可以加入路径集合
             if (!pathVec.empty()) {
                 m_pathSetVec.emplace_back(pathVec);
+                m_IpathSetVec.emplace_back(pathVec);
+//                遍历路径，修改m_routeMap
+                f_modifyRouteMap(pathVec);
             }
         }
 //        2、起点与终点位于同一列，遍历列
@@ -59,16 +122,34 @@ public:
 //            行遍历结果不为空，可以加入路径集合
             if (!pathVec.empty()) {
                 m_pathSetVec.emplace_back(pathVec);
+                m_IpathSetVec.emplace_back(pathVec);
+    //                遍历路径，修改m_routeMap
+                f_modifyRouteMap(pathVec);
             }
         }
 //        第二类：判断L/L7形路径 ： 其实就是除了I型路径之外的优先遍历竖直方向的路径（Y轴/遍历列）:结果也许包括多个路径
         vector<vector<pair<int, int>>> colFirstPathSet = f_colFirstTraverse(m_src, m_des, m_linkState);
-        m_pathSetVec.insert(m_pathSetVec.end(), colFirstPathSet.begin(), colFirstPathSet.end());
+        if (!colFirstPathSet.empty()) {
+            m_pathSetVec.insert(m_pathSetVec.end(), colFirstPathSet.begin(), colFirstPathSet.end());
+            m_colFirstPathSetVec = colFirstPathSet;
+//            遍历路径，修改m_routeMap;
+            for (auto pathVec : m_colFirstPathSetVec) {
+                f_modifyRouteMap(pathVec);
+            }
+        }
 //        第三类：优先遍历水平方向的路径（X轴/遍历行），结果也许包括多个路径
         vector<vector<pair<int, int>>> rowFirstPathSet = f_rowFirstTraverse(m_src, m_des, m_linkState);
-        m_pathSetVec.insert(m_pathSetVec.end(), rowFirstPathSet.begin(), rowFirstPathSet.end());
+        if (!rowFirstPathSet.empty()) {
+            m_pathSetVec.insert(m_pathSetVec.end(), rowFirstPathSet.begin(), rowFirstPathSet.end());
+            m_rowFirstPathSetVec = rowFirstPathSet;
+//            遍历路径，修改m_routeMap;
+            for (auto pathVec : m_rowFirstPathSetVec) {
+                f_modifyRouteMap(pathVec);
+            }
+        }
         return m_pathSetVec;
     }
+    
 //    沿着列进行遍历
     vector<pair<int, int>> f_rowTraverse(pair<int, int> src, pair<int, int> des, vector<vector<Node>> m_linkState) {
 //        src在des同row左边，具体见结构体struct Node
@@ -102,6 +183,7 @@ public:
         }
         return path;
     }
+    
 //    沿着行遍历与沿着列遍历类似
     vector<pair<int, int>> f_colTraverse(pair<int, int> src, pair<int, int> des, vector<vector<Node>> m_linkState) {
 //        src在des同col上边，具体见结构体struct Node
@@ -135,6 +217,7 @@ public:
         }
         return path;
     }
+    
 //      判断L/L7形路径 ： 优先遍历竖直方向的路径（Y轴/遍历列），结果也许包括多个路径
     vector<vector<pair<int, int>>> f_colFirstTraverse(pair<int, int> src, pair<int, int> des, vector<vector<Node>> m_linkState) {
 //        设置遍历区域的border
@@ -199,6 +282,7 @@ public:
         }
         return ans;
     }
+    
 //    第三类：优先遍历水平方向的路径（X轴/遍历行），结果也许包括多个路径
     vector<vector<pair<int, int>>> f_rowFirstTraverse(pair<int, int> src, pair<int, int> des, vector<vector<Node>> m_linkState) {
 //        设置遍历区域的border
@@ -279,6 +363,8 @@ public:
         vector<vector<int>> dirsVec = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
         //            当前位置加入curr_path;
         curr_path.emplace_back(src);
+//        当前src设置为visited
+        b_visited[src.first][src.second] = true;
 //        注意⚠️：这里是允许绕路的方式，即可以走4个方向
 //        可以改为不允许绕路的方式，只允许按着i_colDirFlag,i_rowDirFlag方向走
         for (int i = 0; i < 4; ++i) {
@@ -312,13 +398,17 @@ public:
             //            next_pos恢复访问设置
             b_visited[next_pos.first][next_pos.second] = false;
         }
+//        恢复当前位置为未被访问
+        b_visited[src.first][src.second] = false;
         return ;
     }
+    
     void f_showTasks() {
         cout<<"m_src : ("<<m_src.first<<", "<<m_src.second<<")"<<endl;
         cout<<"m_des : ("<<m_des.first<<", "<<m_des.second<<")"<<endl;
         cout<<endl;
     }
+    
 //    输出路径集合
     void f_showPathSet() {
         for (int i = 0; i < m_pathSetVec.size(); ++i) {
@@ -329,48 +419,67 @@ public:
             cout<<endl;
         }
     }
+    
+//    判断两个点的位置关系
+    int f_posDir(pair<int, int> curr_pos, pair<int, int> next_pos) {
+//        next_pos在curr_pos上方
+        if (next_pos.first ==  curr_pos.first - 1) {
+            return 0;
+        }
+        //        next_pos在curr_pos右方
+        if (next_pos.second == curr_pos.second + 1) {
+            return 1;
+        }
+        //        next_pos在curr_pos下方
+        if (next_pos.first == curr_pos.first + 1) {
+            return 2;
+        }
+        //        next_pos在curr_pos左方
+        if (next_pos.second == curr_pos.second - 1) {
+            return 3;
+        }
+        return 0;
+    }
+
+//    根据pathVec修改m_routeMap
+    void f_modifyRouteMap(vector<pair<int, int>> pathVec) {
+    //                遍历路径，修改m_routeMap
+        pair<int, int> curr_pos = pathVec[0];
+        for (int i = 1; i < pathVec.size(); ++i) {
+            pair<int, int> next_pos = pathVec[i];
+    //                    判断next_pos在curr_pos的方位；
+            int i_dirNum = f_posDir(curr_pos, next_pos);
+    //                    将对应的边设置为被占用
+            m_routeMap[curr_pos.first][curr_pos.second].b_edgeBusy[i_dirNum] = true;
+            m_routeMap[next_pos.first][next_pos.second].b_edgeBusy[(i_dirNum + 2) % 4] = true;
+    //                    顺带将节点设置为busy
+            m_routeMap[curr_pos.first][curr_pos.second].b_nodeBusy = true;
+            m_routeMap[next_pos.first][next_pos.second].b_nodeBusy = true;
+    //                    位置移动
+            curr_pos = next_pos;
+        }
+    }
+    
+//    路径相似判断
+    bool pathSimilarity(Task & task) {
+//        比对两个任务的m_routeMap是否有相同的路径段为busy
+        for (int i = 0; i < m_routeMap.size(); ++i) {
+            for (int j = 0; j < m_routeMap[i].size(); ++j) {
+//                遍历b_edgeBusy
+                for (int k = 0; k < 4; ++k) {
+                    if (m_routeMap[i][j].b_edgeBusy[k] == true && task.m_routeMap[i][j].b_edgeBusy[k] == true) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 };
 
-// 定义图类：记录边的空闲状态
-class Graph{
-private:
-    int m_row, m_col;
-//    为了实现方便，边暂时选用邻接矩阵进行存储
-    vector<vector<Node>> m_linkState;
-public:
-//    地图默认初始化为2 * 2
-    Graph(int i_row = 2, int i_col = 2) {
-        m_row = i_row;
-        m_col = i_col;
-        for (int i = 0; i < m_row; ++i) {
-            vector<Node> row_state(m_col, Node());
-            m_linkState.emplace_back(row_state);
-        }
-    }
-    void f_showGraph() {
-        for (int i = 0; i < m_row; ++i) {
-            for (int j = 0; j < m_col; ++j) {
-                Node curr_node = m_linkState[i][j];
-                cout<<curr_node.b_nodeBusy<<" ";
-                for (int k = 0; k < 4; ++k) {
-                    cout<<curr_node.b_edgeBusy[k]<<" ";
-                }
-                cout<<endl;
-            }
-            cout<<endl;
-        }
-    }
-//    设置节点状态
-    void f_setLinkState(const pair<int, int> & pos, bool state) {
-        m_linkState[pos.first][pos.second].b_nodeBusy = state;
-    }
-//    返回图的边节点信息
-    vector<vector<Node>> & f_getLinkState() {
-        return m_linkState;
-    }
-};
 
 int main(int argc, const char * argv[]) {
+//    第一阶段
 //    初始化地图
 //    地图默认为4 * 4
     int i_row = 4, i_col = 4;
@@ -387,7 +496,7 @@ int main(int argc, const char * argv[]) {
         cout<<"please input source and destination."<<endl;
         cin >> src.first >> src.second;
         cin >> des.first >> des.second;
-        Task task(src, des);
+        Task task(src, des, graph_obj.f_getMapSizeVec());
         //        标记起点和终点为繁忙状态
         graph_obj.f_setLinkState(src, true);
         graph_obj.f_setLinkState(des, true);
@@ -404,5 +513,33 @@ int main(int argc, const char * argv[]) {
     }
 //    显示地图
     graph_obj.f_showGraph();
+//  第二阶段
+//    选取一个路径集合D1，确定与其有交集的路径集合的集合
+    int i_taskSetNum = 0;
+    while (!taskListVec.empty()) {
+        ++i_taskSetNum;
+        Task selectTask = taskListVec[0];
+        taskListVec.erase(taskListVec.begin());
+        vector<Task> taskSetVec = {selectTask};
+//        寻找与selectTask有交集的路径集合
+        for (int i = 0; i < taskListVec.size(); ++i) {
+            if (selectTask.pathSimilarity(taskListVec[i])) {
+//                将路径集合移到当前任务集合（taskSetVec）中
+                taskSetVec.emplace_back(taskListVec[i]);
+                taskListVec.erase(taskListVec.begin() + i);
+                --i;
+            }
+        }
+//        在路径集合的集合内，进行路径选择
+//        打印当前任务集合
+        cout<<"第"<<i_taskSetNum<<"个任务集合, "<<"taskSetVec.size() : "<<taskSetVec.size()<<endl;
+        for (int i = 0; i < taskSetVec.size(); ++i) {
+//            cout<<"task "<<i + 1<<" : ("<<taskSetVec[i].m_src.first<<" , "<<taskSetVec[i].m_src.second<<") -> "<<taskSetVec[i].m_des.first<<" , "<<taskSetVec[i].m_des.second<<")"<<end;
+            taskSetVec[i].f_showTasks();
+        }
+//        清空当前任务集合
+        taskSetVec.clear();
+    }
+    
     return 0;
 }
