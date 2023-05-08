@@ -26,6 +26,13 @@ struct Node{
             b_edgeBusy.emplace_back(false);
         }
     }
+//    重置节点信息
+    void f_reset() {
+        b_nodeBusy = false;
+        for (int i = 0; i < 4; ++i) {
+            b_edgeBusy[i] = false;
+        }
+    }
 };
 
 
@@ -45,8 +52,11 @@ public:
             m_linkState.emplace_back(row_state);
         }
     }
+//    展示节点以及其四周的边是否busy，1表示busy,0表示free
     void f_showGraph() {
+        cout<<"整个图的节点及其四周边的繁忙情况."<<endl;
         for (int i = 0; i < m_row; ++i) {
+            cout<<"第"<<i + 1<<"行节点的信息."<<endl;
             for (int j = 0; j < m_col; ++j) {
                 Node curr_node = m_linkState[i][j];
                 cout<<curr_node.b_nodeBusy<<" ";
@@ -95,11 +105,11 @@ public:
 //    判断路径是否空闲
     bool f_pathBusy(vector<pair<int, int>> & pathVec) {
 //        打印路径
-        cout<<"f_pathBusy pathVec"<<endl;
-        for(int i = 0; i < pathVec.size(); ++i) {
-            cout<<pathVec[i].first<<" "<<pathVec[i].second<<endl;
-        }
-        cout<<endl;
+//        cout<<"f_pathBusy pathVec"<<endl;
+//        for(int i = 0; i < pathVec.size(); ++i) {
+//            cout<<pathVec[i].first<<" "<<pathVec[i].second<<endl;
+//        }
+//        cout<<endl;
 //        根据之前路径寻找算法，pathVec不可能为空
         pair<int, int> curr_pos = pathVec[0];
 //        判断当前位置是否busy
@@ -111,21 +121,21 @@ public:
             pair<int, int> next_pos = pathVec[i];
 //              i_dirNum表示next_pos在curr_pos的方位
             int i_dirNum = f_posDir(curr_pos, next_pos);
-            cout<<"i_dirNum : "<<i_dirNum<<endl;
+//            cout<<"i_dirNum : "<<i_dirNum<<endl;
 //            判断边是否为busy
             if (m_linkState[curr_pos.first][curr_pos.second].b_edgeBusy[i_dirNum]) {
-                cout<<"m_linkState[curr_pos.first][curr_pos.second].b_edgeBusy[i_dirNum] busy"<<endl;
+//                cout<<"m_linkState[curr_pos.first][curr_pos.second].b_edgeBusy[i_dirNum] busy"<<endl;
                 return true;
             }
 //            (i_dirNum + 2) % 4表示curr_pos在next_pos的方位
             if (m_linkState[next_pos.first][next_pos.second].b_edgeBusy[(i_dirNum + 2) % 4]) {
-                cout<<"m_linkState[next_pos.first][next_pos.second].b_edgeBusy[(i_dirNum + 2) % 4]  busy"<<endl;
+//                cout<<"m_linkState[next_pos.first][next_pos.second].b_edgeBusy[(i_dirNum + 2) % 4]  busy"<<endl;
                 return true;
             }
 //            判断next_pos是否busy，但不判断终点：因为pathVec[pathVec.size() -  1]表示终点
 //            注意这里i < pathVec.size() - 1，而不是i < pathVec.size()，因为不应该判断终点
             if (i < pathVec.size() - 1 && m_linkState[next_pos.first][next_pos.second].b_nodeBusy) {
-                cout<<"m_linkState[next_pos.first][next_pos.second].b_nodeBusy"<<endl;
+//                cout<<"m_linkState[next_pos.first][next_pos.second].b_nodeBusy"<<endl;
                 return true;
             }
         }
@@ -150,6 +160,15 @@ public:
             }
         }
         return ;
+    }
+    
+//    清空地图
+    void f_clear() {
+        for (int i = 0; i < m_row; ++i) {
+            for (int j = 0; j < m_col; ++j) {
+                m_linkState[i][j].f_reset();
+            }
+        }
     }
 };
 
@@ -355,13 +374,13 @@ public:
         vector<vector<pair<int, int>>> ans;
         DFS(src, des, m_linkState, b_visited, borders, curr_path, ans);
 //        打印ans路径集合
-        cout<<"f_colFirstTraverse ans : "<<endl;
-        for (int i = 0; i < ans.size(); ++i) {
-            for (int j = 0; j < ans[i].size(); ++j) {
-                cout<<ans[i][j].first<<" "<<ans[i][j].second<<endl;
-            }
-            cout<<endl;
-        }
+//        cout<<"f_colFirstTraverse ans : "<<endl;
+//        for (int i = 0; i < ans.size(); ++i) {
+//            for (int j = 0; j < ans[i].size(); ++j) {
+//                cout<<ans[i][j].first<<" "<<ans[i][j].second<<endl;
+//            }
+//            cout<<endl;
+//        }
         return ans;
     }
     
@@ -375,10 +394,10 @@ public:
             {"right", max(src.second, des.second)},
         };
 //          打印输出
-        cout<<"borders : "<<endl;
-        for (auto  it : borders) {
-            cout<<it.first<<" "<<it.second<<endl;
-        }
+//        cout<<"borders : "<<endl;
+//        for (auto  it : borders) {
+//            cout<<it.first<<" "<<it.second<<endl;
+//        }
         //        把src的位置设置为visited，然后让src沿着列移动一个位置
         vector<vector<bool>> b_visited(m_linkState.size(), vector<bool>(m_linkState[0].size(), false));
         b_visited[src.first][src.second] = true;
@@ -401,8 +420,8 @@ public:
             i_rowLenFlag = -1;
         }
 //        打印输出
-        cout<<"i_colDirFlag : "<<i_colDirFlag<<" i_rowDirFlag : "<<i_rowDirFlag<<endl;
-        cout<<"i_colLenFlag : "<<i_colLenFlag<<" i_rowLenFlag: "<<i_rowLenFlag<<endl;
+//        cout<<"i_colDirFlag : "<<i_colDirFlag<<" i_rowDirFlag : "<<i_rowDirFlag<<endl;
+//        cout<<"i_colLenFlag : "<<i_colLenFlag<<" i_rowLenFlag: "<<i_rowLenFlag<<endl;
 //        所有路径都从src开始出发，存储当前遍历得到的路径
         vector<pair<int, int>> curr_path = {src};
 //        确定水平方向的下一个节点是否busy，以及这一段路径是否busy。
@@ -420,20 +439,20 @@ public:
         vector<vector<pair<int, int>>> ans;
         DFS(src, des, m_linkState, b_visited, borders, curr_path, ans);
 //        打印ans路径集合
-        cout<<"f_rowFirstTraverse ans : "<<endl;
-        for (int i = 0; i < ans.size(); ++i) {
-            for (int j = 0; j < ans[i].size(); ++j) {
-                cout<<ans[i][j].first<<" "<<ans[i][j].second<<endl;
-            }
-            cout<<endl;
-        }
+//        cout<<"f_rowFirstTraverse ans : "<<endl;
+//        for (int i = 0; i < ans.size(); ++i) {
+//            for (int j = 0; j < ans[i].size(); ++j) {
+//                cout<<ans[i][j].first<<" "<<ans[i][j].second<<endl;
+//            }
+//            cout<<endl;
+//        }
         return ans;
     }
     
 //    DFS寻找路径,ans可能为空，但ans内部每条路径不可能为空
     void DFS(pair<int, int> src, pair<int, int> des, const vector<vector<Node>> & m_linkState, vector<vector<bool>> & b_visited, unordered_map<string, int> & borders, vector<pair<int, int>> curr_path, vector<vector<pair<int, int>>> & ans) {
 //        输出src，des
-        cout<<"src : "<<src.first<<" "<<src.second<<" des : "<<des.first <<" "<<des.second<<endl;
+//        cout<<"src : "<<src.first<<" "<<src.second<<" des : "<<des.first <<" "<<des.second<<endl;
 //        边界条件，src到des
 //        注意⚠️：虽然此处的边界判定在这个project中无用，但还是留在这里
 //        if (src == des) {
@@ -455,7 +474,7 @@ public:
             if (next_pos.first < borders["up"] || next_pos.first > borders["bottom"] || next_pos.second < borders["left"] || next_pos.second > borders["right"]) {
                 continue;
             }
-            cout<<"next_pos : "<<next_pos.first<<" "<<next_pos.second<<endl;
+//            cout<<"next_pos : "<<next_pos.first<<" "<<next_pos.second<<endl;
 //            如果新位置visited过，不允许访问
             if (b_visited[next_pos.first][next_pos.second]) {
                 continue;
@@ -537,7 +556,7 @@ public:
         return 0;
     }
 
-//    根据pathVec修改m_routeMap
+//    根据pathVec修改m_routeMap，即修改图中点和边的繁忙状态
     void f_modifyRouteMap(vector<pair<int, int>> pathVec) {
     //                遍历路径，修改m_routeMap
         pair<int, int> curr_pos = pathVec[0];
@@ -586,11 +605,31 @@ public:
     vector<vector<pair<int, int>>> f_getRowFirstPath() {
         return m_rowFirstPathSetVec;
     }
+    
+//    清空任务的路径集合及路径地图
+    void f_reset() {
+//        清空任务路径集合
+        m_pathSetVec.clear();
+        m_IpathSetVec.clear();
+        m_colFirstPathSetVec.clear();
+        m_rowFirstPathSetVec.clear();
+//        清空任务的路径地图
+        for (int i = 0; i < m_routeMap.size(); ++i) {
+            for (int j = 0; j < m_routeMap[i].size(); ++j) {
+                m_routeMap[i][j].f_reset();
+            }
+        }
+    }
 };
 
-
+//    比较任务路径集合的大小
 bool g_routeNumCompare(Task & task1, Task & task2) {
     return task1.f_getPathSet().size() < task2.f_getPathSet().size();
+}
+
+//    比较路径长度
+bool g_routeLenCompare(vector<pair<int, int>> & path1, vector<pair<int, int>> & path2) {
+    return path1.size() < path2.size();
 }
 
 
@@ -610,168 +649,209 @@ int main(int argc, const char * argv[]) {
     cout<<"Please input the Number of tasks. input format : task.num"<<endl;
     cin >> i_taskNum;
     vector<Task> taskListVec;
-    while (i_taskNum-- > 0) {
+//    输入任务信息
+    for(int i = 0; i < i_taskNum; ++i) {
         pair<int, int> src, des;
+        cout<<"Task"<<i + 1<<" info."<<endl;
         cout<<"please input source. input format : source.row source.col"<<endl;
         cin >> src.first >> src.second;
         cout<<"please input destination. input format : destination.row  destination.col"<<endl;
         cin >> des.first >> des.second;
         Task task(src, des, graph_obj.f_getMapSizeVec());
-        //        标记起点和终点为繁忙状态
-        graph_obj.f_setLinkState(src, true);
-        graph_obj.f_setLinkState(des, true);
-//         寻找路径
-        task.f_findRoute(graph_obj.f_getLinkState());
-//        测试：打印路径
-        task.f_showPathSet();
         taskListVec.emplace_back(task);
     }
-//    显示任务
-    for(int i = 0; i < taskListVec.size(); ++i) {
-        cout<<"task"<<i + 1<<": "<<endl;
-        taskListVec[i].f_showTasks();
-    }
-//    显示地图
-    graph_obj.f_showGraph();
 //  finalPathSetVec存储全任务最终的路径集合，在程序末尾进行打印输出
-    vector<vector<pair<int, int>>> finalPathSetVec;
+//    finalPahtSetVec数据格式解析：
+//    最内层vector表示路径
+//    中间层vector表示任务对应的路径
+//    最外层vector表示第i个批次，完成了哪些任务
+    vector<vector<vector<pair<int, int>>>> finalPathSetVec;
 //  第二阶段
 //    选取一个路径集合D1，确定与其有交集的路径集合的集合
     int i_taskSetNum = 0;
-    while (!taskListVec.empty()) {
-        ++i_taskSetNum;
-        Task selectTask = taskListVec[0];
-        taskListVec.erase(taskListVec.begin());
-        vector<Task> taskSetVec = {selectTask};
-//        寻找与selectTask有交集的路径集合
+    int i_taskEpoch = 1;
+    //    这部分代码用于寻找当前批次任务中没有找到的路径的任务的路径。
+    //      nextTaskVec用于记录这一轮无法完成的任务，在下一轮完成
+    vector<Task> nextTaskVec;
+//    最开始nextTaskVec为空，taskListVec不空
+//    处理逻辑：
+//    1、每次针对剩余的所有任务，设置节点及边的繁忙状态；
+//    2、然后寻找任务的路径集合，再选取每个任务的最终路径；
+//    3、获取此轮无法完成的任务，形成nextTaskVec，循环第1、2步
+    while (!taskListVec.empty() || !nextTaskVec.empty()) {
+        cout<<"第"<<i_taskEpoch<<"批次任务:"<<endl;
+        vector<vector<pair<int, int>>> batchPathSetVec;
+        i_taskSetNum = 0;
+//        重置地图
+        graph_obj.f_clear();
+//        清空原始任务的路径集合和路径地图
         for (int i = 0; i < taskListVec.size(); ++i) {
-            if (selectTask.pathSimilarity(taskListVec[i])) {
-//                将路径集合移到当前任务集合（taskSetVec）中
-                taskSetVec.emplace_back(taskListVec[i]);
-                taskListVec.erase(taskListVec.begin() + i);
-                --i;
-            }
+            taskListVec[i].f_reset();
         }
-//        在路径集合的集合内，进行路径选择
-//        打印当前任务集合
-        cout<<"第"<<i_taskSetNum<<"个任务集合, "<<"taskSetVec.size() : "<<taskSetVec.size()<<endl;
-        for (int i = 0; i < taskSetVec.size(); ++i) {
-            taskSetVec[i].f_showTasks();
+//        设置节点和边为繁忙状态
+        for (int i = 0; i < taskListVec.size(); ++i) {
+//            设置节点
+            graph_obj.f_setLinkState(taskListVec[i].f_getSrc(), true);
+            graph_obj.f_setLinkState(taskListVec[i].f_getDes(), true);
         }
-//        第三阶段：根据当前任务集合，确定路径，修改graph_obj.m_linkState
-//        根据当前任务集合中的各任务路径数量从小到大排序
-        sort(taskSetVec.begin(), taskSetVec.end(), g_routeNumCompare);
-//        根据排序结果，确定最终路径，然后修改graph_obj.m_linkState
-        for (int i = 0; i < taskSetVec.size(); ++i) {
-//            根据I型路径、优先遍历Y、优先遍历X的顺序选择路径
-            vector<vector<pair<int, int>>> IpathSetVec = taskSetVec[i].f_getIpathSet();
-//            cout<<"IpathSetVec.size() : "<<IpathSetVec.size()<<endl;
-//            找到一条路径，就退出
-            bool findPath = false;
-            if (!IpathSetVec.empty()) {
-                for (auto pathVec : IpathSetVec) {
-//                    判断路径中所有点和线段是否都空闲
-                    if (!graph_obj.f_pathBusy(pathVec)) {
-//                        找到路径，将路径加入到finalPathSetVec
-//                        但此处在路径前面加入任务起点和终点，方便后续打印输出，明确任务信息
-                        pathVec.insert(pathVec.begin(), taskSetVec[i].f_getDes());
-                        pathVec.insert(pathVec.begin(), taskSetVec[i].f_getSrc());
-                        finalPathSetVec.emplace_back(pathVec);
-//                        cout<<"finalPathSetVec.size() : "<<finalPathSetVec.size()<<endl;
-//                        设置当前路径的点和边为busy
-                        graph_obj.f_setPathBusy(pathVec);
-//                        找到当前任务的合适路径，前往下一任务
-                        findPath = true;
-                        break;
-                    }
+//        寻找路径并输出
+        for (int i = 0; i < taskListVec.size(); ++i) {
+//            寻找路径
+            taskListVec[i].f_findRoute(graph_obj.f_getLinkState());
+//            taskListVec[i].f_showTasks();
+//            taskListVec[i].f_showPathSet();
+        }
+//        展示地图
+//        graph_obj.f_showGraph();
+        while (!taskListVec.empty()) {
+            ++i_taskSetNum;
+            Task selectTask = taskListVec[0];
+            taskListVec.erase(taskListVec.begin());
+            vector<Task> taskSetVec = {selectTask};
+            //        寻找与selectTask有交集的路径集合
+            for (int i = 0; i < taskListVec.size(); ++i) {
+                if (selectTask.pathSimilarity(taskListVec[i])) {
+                    //                将路径集合移到当前任务集合（taskSetVec）中
+                    taskSetVec.emplace_back(taskListVec[i]);
+                    taskListVec.erase(taskListVec.begin() + i);
+                    --i;
                 }
             }
-            //            找到一条路径,前往下一任务
-            if (findPath) {
-                continue;
+            //        在路径集合的集合内，进行路径选择
+            //        打印当前任务集合
+            cout<<"第"<<i_taskSetNum<<"个任务集合, "<<"taskSetVec.size() : "<<taskSetVec.size()<<endl;
+            for (int i = 0; i < taskSetVec.size(); ++i) {
+                taskSetVec[i].f_showTasks();
             }
-            vector<vector<pair<int, int>>> colPathSetVec = taskSetVec[i].f_getColFirstPath();
-//            cout<<"colPathSetVec.size() : "<<colPathSetVec.size()<<endl;
-            if (!colPathSetVec.empty()) {
-                for (auto pathVec : colPathSetVec) {
-//                    判断路径中所有点和线段是否都空闲
-                    if (!graph_obj.f_pathBusy(pathVec)) {
-//                        找到路径，将路径加入到finalPathSetVec
-//                        但此处在路径前面加入任务起点和终点，方便后续打印输出，明确任务信息
-                        pathVec.insert(pathVec.begin(), taskSetVec[i].f_getDes());
-                        pathVec.insert(pathVec.begin(), taskSetVec[i].f_getSrc());
-                        finalPathSetVec.emplace_back(pathVec);
-//                        cout<<"finalPathSetVec.size() : "<<finalPathSetVec.size()<<endl;
-//                        设置当前路径的点和边为busy
-                        graph_obj.f_setPathBusy(pathVec);
-//                        找到当前任务的合适路径，前往下一任务
-                        findPath = true;
-                        break;
+            //        第三阶段：根据当前任务集合，确定路径，修改graph_obj.m_linkState
+            //        根据当前任务集合中的各任务路径数量从小到大排序
+            sort(taskSetVec.begin(), taskSetVec.end(), g_routeNumCompare);
+            //        根据排序结果，确定最终路径，然后修改graph_obj.m_linkState
+            for (int i = 0; i < taskSetVec.size(); ++i) {
+                //            根据I型路径、优先遍历Y、优先遍历X的顺序选择路径
+                vector<vector<pair<int, int>>> IpathSetVec = taskSetVec[i].f_getIpathSet();
+                //            cout<<"IpathSetVec.size() : "<<IpathSetVec.size()<<endl;
+                //            找到一条路径，就退出
+                bool findPath = false;
+                if (!IpathSetVec.empty()) {
+                    for (auto pathVec : IpathSetVec) {
+                        //                    判断路径中所有点和线段是否都空闲
+                        if (!graph_obj.f_pathBusy(pathVec)) {
+                            //                        找到路径，将路径加入到finalPathSetVec
+                            //                        但此处在路径前面加入任务起点和终点，方便后续打印输出，明确任务信息
+                            pathVec.insert(pathVec.begin(), taskSetVec[i].f_getDes());
+                            pathVec.insert(pathVec.begin(), taskSetVec[i].f_getSrc());
+                            batchPathSetVec.emplace_back(pathVec);
+                            //                        cout<<"finalPathSetVec.size() : "<<finalPathSetVec.size()<<endl;
+                            //                        设置当前路径的点和边为busy
+                            graph_obj.f_setPathBusy(pathVec);
+                            //                        找到当前任务的合适路径，前往下一任务
+                            findPath = true;
+                            break;
+                        }
                     }
                 }
-            }
-            //            找到一条路径,前往下一任务
-            if (findPath) {
-                continue;
-            }
-            vector<vector<pair<int, int>>> rowPathSetVec = taskSetVec[i].f_getRowFirstPath();
-//            cout<<"rowPathSetVec.size() : "<<rowPathSetVec.size()<<endl;
-            if (!rowPathSetVec.empty()) {
-                for (auto pathVec : rowPathSetVec) {
-//                    判断路径中所有点和线段是否都空闲
-                    if (!graph_obj.f_pathBusy(pathVec)) {
-//                        找到路径，将路径加入到finalPathSetVec
-//                        但此处在路径前面加入任务起点和终点，方便后续打印输出，明确任务信息
-                        pathVec.insert(pathVec.begin(), taskSetVec[i].f_getDes());
-                        pathVec.insert(pathVec.begin(), taskSetVec[i].f_getSrc());
-                        finalPathSetVec.emplace_back(pathVec);
-//                        cout<<"finalPathSetVec.size() : "<<finalPathSetVec.size()<<endl;
-//                        设置当前路径的点和边为busy
-                        graph_obj.f_setPathBusy(pathVec);
-//                        找到当前任务的合适路径，前往下一任务
-                        findPath = true;
-                        break;
+                //            找到一条I型路径,前往下一任务
+                if (findPath) {
+                    continue;
+                }
+                vector<vector<pair<int, int>>> colPathSetVec = taskSetVec[i].f_getColFirstPath();
+                //            cout<<"colPathSetVec.size() : "<<colPathSetVec.size()<<endl;
+                if (!colPathSetVec.empty()) {
+//                    根据路径长短排序，同等要求下，保证短路径优先
+                    sort(colPathSetVec.begin(), colPathSetVec.end(), g_routeLenCompare);
+                    for (auto pathVec : colPathSetVec) {
+                        //                    判断路径中所有点和线段是否都空闲
+                        if (!graph_obj.f_pathBusy(pathVec)) {
+                            //                        找到路径，将路径加入到finalPathSetVec
+                            //                        但此处在路径前面加入任务起点和终点，方便后续打印输出，明确任务信息
+                            pathVec.insert(pathVec.begin(), taskSetVec[i].f_getDes());
+                            pathVec.insert(pathVec.begin(), taskSetVec[i].f_getSrc());
+                            batchPathSetVec.emplace_back(pathVec);
+                            //                        cout<<"finalPathSetVec.size() : "<<finalPathSetVec.size()<<endl;
+                            //                        设置当前路径的点和边为busy
+                            graph_obj.f_setPathBusy(pathVec);
+                            //                        找到当前任务的合适路径，前往下一任务
+                            findPath = true;
+                            break;
+                        }
                     }
                 }
+                //            找到一条L型路径,前往下一任务
+                if (findPath) {
+                    continue;
+                }
+                vector<vector<pair<int, int>>> rowPathSetVec = taskSetVec[i].f_getRowFirstPath();
+                //            cout<<"rowPathSetVec.size() : "<<rowPathSetVec.size()<<endl;
+                if (!rowPathSetVec.empty()) {
+                    //                    根据路径长短排序，同等要求下，保证短路径优先
+                    sort(colPathSetVec.begin(), colPathSetVec.end(), g_routeLenCompare);
+                    for (auto pathVec : rowPathSetVec) {
+                        //                    判断路径中所有点和线段是否都空闲
+                        if (!graph_obj.f_pathBusy(pathVec)) {
+                            //                        找到路径，将路径加入到finalPathSetVec
+                            //                        但此处在路径前面加入任务起点和终点，方便后续打印输出，明确任务信息
+                            pathVec.insert(pathVec.begin(), taskSetVec[i].f_getDes());
+                            pathVec.insert(pathVec.begin(), taskSetVec[i].f_getSrc());
+                            batchPathSetVec.emplace_back(pathVec);
+                            //                        cout<<"finalPathSetVec.size() : "<<finalPathSetVec.size()<<endl;
+                            //                        设置当前路径的点和边为busy
+                            graph_obj.f_setPathBusy(pathVec);
+                            //                        找到当前任务的合适路径，前往下一任务
+                            findPath = true;
+                            break;
+                        }
+                    }
+                }
+                //            找到一条7型路径,前往下一任务
+                if (findPath) {
+                    continue;
+                }
+                //            上述路径都没有合理的，则此轮不加入空路径
+                //            记录这些找不到路径的任务，在下一批次完成
+                nextTaskVec.emplace_back(taskSetVec[i]);
             }
-            //            找到一条路径,前往下一任务
-            if (findPath) {
-                continue;
-            }
-//            上述路径都没有合理的，则加入空路径
-            vector<pair<int, int>> pathVec;
-//          但此处在路径前面加入任务起点和终点，方便后续打印输出，明确任务信息
-            pathVec.insert(pathVec.begin(), taskSetVec[i].f_getDes());
-            pathVec.insert(pathVec.begin(), taskSetVec[i].f_getSrc());
-            finalPathSetVec.emplace_back(pathVec);
+            //        处理完当前任务集合后，m_linkState状态已经修改过，所以需要对后续任务重新寻找pathSetVec
+//            for (auto task : taskListVec) {
+//                task.f_findRoute(graph_obj.f_getLinkState());
+//            }
+            //        清空当前任务集合
+            taskSetVec.clear();
         }
-//        处理完当前任务集合后，m_linkState状态已经修改过，所以需要对后续任务重新寻找pathSetVec
-        for (auto task : taskListVec) {
-            task.f_findRoute(graph_obj.f_getLinkState());
-        }
-//        清空当前任务集合
-        taskSetVec.clear();
+//    这部分代码用于寻找当前批次任务中没有找到的路径的任务的路径。
+        ++i_taskEpoch;
+        taskListVec = nextTaskVec;
+        nextTaskVec.clear();
+//        当前批次的任务最终路径，放入finalPathSetVec
+        finalPathSetVec.emplace_back(batchPathSetVec);
     }
     
+    
+    
 //    show finalPathSetVec
+    cout<<"final path set for all tasks."<<endl;
     for (int i = 0; i < finalPathSetVec.size(); ++i) {
-//        pathVec前两个节点表示起点和终点
-        vector<pair<int, int>> pathVec = finalPathSetVec[i];
-//        判断路径是否为空
-//        show task_id, src, des
-        cout<<"task "<<i + 1<<" src : ("<<pathVec[0].first<<" , "<<pathVec[0].second<<")  des : ("<<pathVec[1].first<<" , "<<pathVec[1].second<<") "<<endl;
-//      show path
-//        此时没有可选路径
-        if (pathVec.size() <= 2) {
-            cout<<"No path."<<endl;
-            continue;
-        } else {
-            cout<<"Path."<<endl;
+//      bathPathSetVec表示当前批次完成的任务及其路径
+        cout<<"第"<<i + 1<<"批次任务及其最终路径："<<endl;
+        vector<vector<pair<int, int>>> batchPathSetVec = finalPathSetVec[i];
+        for (int j = 0; j < batchPathSetVec.size(); ++j) {
+            vector<pair<int, int>> pathVec = batchPathSetVec[j];
+            //        判断路径是否为空
+            //        show task_id, src, des
+            cout<<"task "<<j + 1<<" src : ("<<pathVec[0].first<<" , "<<pathVec[0].second<<")  des : ("<<pathVec[1].first<<" , "<<pathVec[1].second<<") "<<endl;
+    //      show path
+    //        此时没有可选路径
+            if (pathVec.size() <= 2) {
+                cout<<"No path."<<endl;
+                continue;
+            } else {
+                cout<<"Path."<<endl;
+            }
+            for (int k = 2; k < pathVec.size(); ++k) {
+                cout << pathVec[k].first << " " << pathVec[k].second << endl;
+            }
+            cout << endl;
         }
-        for (int j = 2; j < pathVec.size(); ++j) {
-            cout << pathVec[j].first << " " << pathVec[j].second << endl;
-        }
-        cout << endl;
     }
     return 0;
 }
