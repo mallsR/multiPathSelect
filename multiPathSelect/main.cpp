@@ -73,8 +73,9 @@ public:
         m_linkState[pos.first][pos.second].b_nodeBusy = state;
     }
 //    设置链路状态
-    void f_setLinkState(const pair<int, int> & pos, int dir) {
-        m_linkState[pos.first][pos.second].b_edgeBusy[dir];
+    void f_setLinkState(const pair<int, int> & pos, int dir, bool state) {
+//        此处忘记传入链路状态 state
+        m_linkState[pos.first][pos.second].b_edgeBusy[dir] = state;
     }
 //    返回图的边节点信息
     vector<vector<Node>> f_getLinkState() {
@@ -335,6 +336,13 @@ public:
 //        return m_pathSetVec;
 //    }
     vector<vector<pair<int, int>>> f_findRoute(Graph graph_obj) {
+//        寻找路径之前，清空上次寻找路径是的链路状态记录
+        for (int i = 0; i < m_routeMap.size(); ++i) {
+            for (int j = 0; j < m_routeMap[0].size(); ++j) {
+//                通过调用reset函数，将节点和边繁忙状态设置为空闲
+                m_routeMap[i][j].f_reset();
+            }
+        }
         //         第一类：首先判断I型路径
         //        1、起点与终点位于同一行，遍历行
         if(m_src.first == m_des.first) {
@@ -343,7 +351,7 @@ public:
             if (!pathVec.empty()) {
                 m_pathSetVec.emplace_back(pathVec);
                 m_IpathSetVec.emplace_back(pathVec);
-//                遍历路径，修改m_routeMap
+//                遍历路径，修改m_routeMap，但要记得在再次寻找路径之前修改回来
                 f_modifyRouteMap(pathVec);
             }
         }
@@ -647,7 +655,28 @@ public:
             cout<<m_selectPath[i].first<<" "<<m_selectPath[i].second<<endl;
         }
     }
+//    输出最终选择的路径
+    void f_showSelectPath() {
+        cout<<"selectPath : "<<endl;
+        for (int i = 0; i < m_selectPath.size(); ++i) {
+            cout<<m_selectPath[i].first<<" "<<m_selectPath[i].second<<endl;
+        }
+    }
     
+//      展示任务的routeMap
+    void f_showRouteMap() {
+        for (int i = 0; i < m_routeMap.size(); ++i) {
+            cout<<"第"<<i + 1<<"行节点信息!"<<endl;
+            for (int j = 0; j < m_routeMap[0].size(); ++j) {
+                cout<< m_routeMap[i][j].b_nodeBusy<<endl;
+//                从上方开始，以顺时针方向输出边的信息
+                for (int dir = 0; dir < 4; ++dir) {
+                    cout<<m_routeMap[i][j].b_edgeBusy[dir]<<" ";
+                }
+                cout<<endl;
+            }
+        }
+    }
 //    输出路径集合
     void f_showPathSet() {
         for (int i = 0; i < m_pathSetVec.size(); ++i) {
@@ -717,8 +746,8 @@ public:
 //            判断下一个点在currNode的方向
             int dir = graph_obj.f_posDir(currNode, m_selectPath[i]);
 //            回收链路资源 ：双向边
-            graph_obj.f_setLinkState(currNode, dir);
-            graph_obj.f_setLinkState(m_selectPath[i], (dir + 2) % 4);
+            graph_obj.f_setLinkState(currNode, dir, false);
+            graph_obj.f_setLinkState(m_selectPath[i], (dir + 2) % 4, false);
 //            回收节点资源
             currNode = m_selectPath[i];
             graph_obj.f_setNodeState(currNode, false);
@@ -771,13 +800,13 @@ public:
     }
     
 //    路径相似判断
-    bool pathSimilarity(Task & task) {
+    bool pathSimilarity(Task * task) {
 //        比对两个任务的m_routeMap是否有相同的路径段为busy
         for (int i = 0; i < m_routeMap.size(); ++i) {
             for (int j = 0; j < m_routeMap[i].size(); ++j) {
 //                遍历b_edgeBusy
                 for (int k = 0; k < 4; ++k) {
-                    if (m_routeMap[i][j].b_edgeBusy[k] == true && task.m_routeMap[i][j].b_edgeBusy[k] == true) {
+                    if (m_routeMap[i][j].b_edgeBusy[k] == true && task->m_routeMap[i][j].b_edgeBusy[k] == true) {
                         return true;
                     }
                 }
@@ -919,7 +948,7 @@ int main(int argc, const char * argv[]) {
         cin >> src.first >> src.second;
         cout<<"please input destination. input format : destination.row  destination.col"<<endl;
         cin >> des.first >> des.second;
-        cout<<"Please input arrive time and data size. input format : fArriveTime fDataSize"<<endl;
+        cout<<"Please input arrive time and data size. input format : fArriveTime fDataSize（）"<<endl;
         cin >> fArriveTime >> fDataSize;
         taskListVec.emplace_back(new Task(src, des, fArriveTime, fDataSize, graph_obj.f_getMapSizeVec()));
     }
@@ -959,8 +988,13 @@ int main(int argc, const char * argv[]) {
         cout<<endl<<"fCurrTime : "<<fCurrTime<<endl;
 //        确定fCurrTime下已经完成的任务，并回收其资源
         cout<<"currTaskVec.size() : "<<currTaskVec.size()<<endl;
+//        输出currTaskVec
+//        for (int i = 0; i < currTaskVec.size(); ++i) {
+//            currTaskVec[i]->f_showTasks();
+//        }
         for (int i = 0; i < currTaskVec.size(); ++i) {
             if (currTaskVec[i]->f_getFinishTime() <= fCurrTime) {
+                cout<<"任务完成"<<endl;
                 finishedTaskVec.emplace_back(currTaskVec[i]);
 //                回收资源，设置节点和链路状态为free
                 currTaskVec[i]->f_recoverResource(graph_obj);
@@ -972,6 +1006,10 @@ int main(int argc, const char * argv[]) {
                 break;
             }
         }
+//        打印地图信息
+//        if (currTaskVec.empty()) {
+//            graph_obj.f_showGraph();
+//        }
 //        确定当前time下，任务集合
         while (iTaskIndex < taskListVec.size() && taskListVec[iTaskIndex]->f_getArriveTime() <= fCurrTime) {
             waitTaskVec.emplace_back(taskListVec[iTaskIndex++]);
@@ -980,10 +1018,12 @@ int main(int argc, const char * argv[]) {
 //        寻找当前时刻下路径并输出
 //        注意⚠️：此处寻找到任务的路径，则证明此任务在当前状态的资源下是可以被完成的，没有找到路径，则需要继续等待。
         cout<<"waitTaskVec.size() = "<<waitTaskVec.size()<<endl;
+//        在重新寻找路径之前，清楚自身之前的链路状态繁忙记录
         for (int i = 0; i < waitTaskVec.size(); ++i) {
 //            waitTaskVec[i]->f_showTasks();
-//            waitTaskVec[i]->f_findRoute(graph_obj.f_getLinkState());
             waitTaskVec[i]->f_findRoute(graph_obj);
+//            展示任务的routeMap
+//            waitTaskVec[i]->f_showRouteMap();
 //            cout<<"f_findRoute之后的路径: "<<endl;
 //            waitTaskVec[i]->f_showPathSet();
         }
@@ -1005,7 +1045,7 @@ int main(int argc, const char * argv[]) {
             vector<Task *> taskSetVec = {selectTask};
             //        寻找与selectTask有交集的路径集合
             for (int i = 0; i < waitTaskVec.size(); ++i) {
-                if (selectTask->pathSimilarity(*(waitTaskVec[i]))) {
+                if (selectTask->pathSimilarity(waitTaskVec[i])) {
                     //                将路径集合移到当前任务集合（taskSetVec）中
                     taskSetVec.emplace_back(waitTaskVec[i]);
                     waitTaskVec.erase(waitTaskVec.begin() + i);
@@ -1042,6 +1082,9 @@ int main(int argc, const char * argv[]) {
                             taskSetVec[i]->f_setSelctPath(pathVec);
     //                        计算任务完成时间
                             taskSetVec[i]->f_computeFinishInfo(fCurrTime);
+                            cout<<"Task_Info : "<<endl;
+                            taskSetVec[i]->f_showTasks();
+                            taskSetVec[i]->f_showSelectPath();
                             cout<<"finishedTime : "<<taskSetVec[i]->f_getFinishTime()<<endl;
                             //                        设置当前路径的点和边为busy
                             graph_obj.f_setPathBusy(pathVec);
@@ -1088,6 +1131,9 @@ int main(int argc, const char * argv[]) {
                             taskSetVec[i]->f_setSelctPath(pathVec);
                             //                        计算任务完成时间
                             taskSetVec[i]->f_computeFinishInfo(fCurrTime);
+                            cout<<"Task_Info : "<<endl;
+                            taskSetVec[i]->f_showTasks();
+                            taskSetVec[i]->f_showSelectPath();
                             cout<<"finishedTime : "<<taskSetVec[i]->f_getFinishTime()<<endl;
                             //                        设置当前路径的点和边为busy
                             graph_obj.f_setPathBusy(pathVec);
@@ -1126,6 +1172,9 @@ int main(int argc, const char * argv[]) {
                             taskSetVec[i]->f_setSelctPath(pathVec);
                             //                        计算任务完成时间
                             taskSetVec[i]->f_computeFinishInfo(fCurrTime);
+                            cout<<"Task_Info : "<<endl;
+                            taskSetVec[i]->f_showTasks();
+                            taskSetVec[i]->f_showSelectPath();
                             cout<<"finishedTime : "<<taskSetVec[i]->f_getFinishTime()<<endl;
                             //                        设置当前路径的点和边为busy
                             graph_obj.f_setPathBusy(pathVec);
@@ -1152,7 +1201,7 @@ int main(int argc, const char * argv[]) {
                 //            上述路径都没有合理的
                 //            记录这些找不到路径的任务，放回waitTaskTempVec，等待下一个时刻
                 waitTaskTempVec.emplace_back(taskSetVec[i]);
-                taskSetVec.erase(taskSetVec.begin() + i);
+//                taskSetVec.erase(taskSetVec.begin() + i);
             }
         }
 //        仍然在等待态的任务集合
